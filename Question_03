@@ -1,1 +1,52 @@
 
+import turtle
+
+def draw_edge(length, depth):
+    if depth == 0:
+        turtle.forward(length)
+    else:
+        length = length / 3
+
+        draw_edge(length, depth - 1)
+
+        turtle.right(60)
+        draw_edge(length, depth - 1)
+
+        turtle.left(120)
+        draw_edge(length, depth - 1)
+
+        turtle.right(60)
+        draw_edge(length, depth - 1)
+
+
+# USER INPUT
+sides = int(input("Enter the number of sides (3 to 10 recommended): "))
+while sides < 3:
+    sides = int(input("Enter the number of sides: "))
+
+side_length = int(input("Enter the side length (e.g., 200): "))
+while side_length <= 0:
+    side_length = int(input("Enter the side length: "))
+
+depth = int(input("Enter the recursion depth (0 to 5 recommended): "))
+while depth < 0:
+    depth = int(input("Enter the recursion depth: "))
+
+
+# TURTLE SETUP
+screen = turtle.Screen()    
+screen.bgcolor("white")      
+
+turtle.speed(0)
+turtle.pensize(2)
+turtle.hideturtle()
+turtle.tracer(0, 0)
+
+angle = 360 / sides
+
+for i in range(sides):
+    draw_edge(side_length, depth)
+    turtle.left(angle)
+
+turtle.update()
+turtle.done()
