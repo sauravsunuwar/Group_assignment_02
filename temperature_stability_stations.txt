@@ -1,5 +1,5 @@
 Most Stable:
-DARWIN-AIRPORT: StdDev 1.2°C
+Station DARWIN-AIRPORT: StdDev 1.2°C
 
 Most Variable:
-WAGGA-WAGGA-AMO: StdDev 6.9°C
+Station WAGGA-WAGGA-AMO: StdDev 6.9°C
