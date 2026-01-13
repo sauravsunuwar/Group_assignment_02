@@ -1,91 +1,79 @@
-# Import turtle module to draw graphics
-import turtle
+import pandas as pd
+import glob
+import os
+import math
 
+files = glob.glob("temperatures/*.csv")
 
-# This function draws one side of the shape using recursion
-# length = how long the line is
-# depth = how many times the pattern repeats
-def draw_side(length, depth):
+all_data = []
+for f in files:
+    all_data.append(pd.read_csv(f))
 
-    # If depth is 0, stop recursion and draw a straight line3
-    if depth == 0:
-        turtle.forward(length)
+data = pd.concat(all_data, ignore_index=True)
 
-    else:
-        # Divide the line into three equal parts
-        part = length / 3
+months = ["January","February","March","April","May","June",
+          "July","August","September","October","November","December"]
 
-        # Draw first small part
-        draw_side(part, depth - 1)
+season_of = {
+    "December":"Summer","January":"Summer","February":"Summer",
+    "March":"Autumn","April":"Autumn","May":"Autumn",
+    "June":"Winter","July":"Winter","August":"Winter",
+    "September":"Spring","October":"Spring","November":"Spring"
+}
 
-        # Turn left to start inward triangle
-        turtle.left(60)
-        draw_side(part, depth - 1)
+season_values = {"Summer": [], "Autumn": [], "Winter": [], "Spring": []}
+station_values = {}
 
-        # Turn right to complete the triangle
-        turtle.right(120)
-        draw_side(part, depth - 1)
+for i in range(len(data)):
+    sid = data.loc[i, "STN_ID"]
+    name = data.loc[i, "STATION_NAME"]
+    key = (sid, name)
+    if key not in station_values:
+        station_values[key] = []
+    for m in months:
+        if m in data.columns:
+            v = data.loc[i, m]
+            if pd.notna(v):
+                v = float(v)
+                station_values[key].append(v)
+                season_values[season_of[m]].append(v)
 
-        # Turn back to original direction
-        turtle.left(60)
-        draw_side(part, depth - 1)
+with open("average_temp.txt", "w", encoding="utf-8") as f:
+    for s in ["Summer","Autumn","Winter","Spring"]:
+        if len(season_values[s]) > 0:
+            avg = sum(season_values[s]) / len(season_values[s])
+            f.write(f"{s}: {avg:.1f}°C\n")
+        else:
+            f.write(f"{s}: No data\n")
 
+ranges = {}
+for k in station_values:
+    vals = station_values[k]
+    if len(vals) > 0:
+        ranges[k] = max(vals) - min(vals)
 
-# -------- USER INPUT SECTION --------
+max_range = max(ranges.values())
 
-# Ask user for number of sides
-sides = int(input("Enter number of sides: "))
-while sides < 3:
-    print("A polygon must have at least 3 sides.")
-    sides = int(input("Enter number of sides: "))
+with open("largest_temp_range_station.txt", "w", encoding="utf-8") as f:
+    for k in ranges:
+        if abs(ranges[k] - max_range) < 0.00001:
+            f.write(f"{k[1]}: {ranges[k]:.1f}°C\n")
 
-# Ask user for side length
-length = int(input("Enter side length: "))
-while length <= 0:
-    print("Length must be positive.")
-    length = int(input("Enter side length: "))
+stds = {}
+for k in station_values:
+    vals = station_values[k]
+    if len(vals) > 0:
+        mean = sum(vals) / len(vals)
+        var = sum((x - mean) ** 2 for x in vals) / len(vals)
+        stds[k] = math.sqrt(var)
 
-# Ask user for recursion depth
-depth = int(input("Enter recursion depth: "))
-while depth < 0:
-    print("Depth cannot be negative.")
-    depth = int(input("Enter recursion depth: "))
+min_std = min(stds.values())
+max_std = max(stds.values())
 
-
-# -------- TURTLE SETUP --------
-
-# Create drawing screen
-screen = turtle.Screen()
-screen.bgcolor("white")
-
-# Set turtle settings
-turtle.speed(0)
-turtle.pensize(2)
-turtle.hideturtle()
-
-# Turn off animation to draw faster
-turtle.tracer(0, 0)
-
-
-# Move turtle to a better starting position (centered)
-turtle.penup()
-turtle.goto(-length / 2, -length / 2)
-turtle.pendown()
-
-
-# -------- DRAW THE SHAPE --------
-
-# Calculate turning angle for polygon
-angle = 360 / sides
-
-# Draw each side of the polygon
-for i in range(sides):
-    draw_side(length, depth)   # Draw one recursive side
-    turtle.left(angle)         # Turn for next side
-
-
-# Show the final drawing
-turtle.update()
-
-# Keep the window open until user closes it
-turtle.done()
+with open("temperature_stability_stations.txt", "w", encoding="utf-8") as f:
+    for k in stds:
+        if abs(stds[k] - min_std) < 0.00001:
+            f.write(f"Most Stable: {k[1]} ({min_std:.1f}°C)\n")
+    for k in stds:
+        if abs(stds[k] - max_std) < 0.00001:
+            f.write(f"Most Variable: {k[1]} ({max_std:.1f}°C)\n")
