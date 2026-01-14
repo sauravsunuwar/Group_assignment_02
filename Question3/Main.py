@@ -1,5 +1,3 @@
-
-
 # Import turtle module to draw graphics
 import turtle
 
